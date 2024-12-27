@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор</title>
+    <style>
+        body {
+            background-color: #121212;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #ffffff;
+        }
+
+        .calculator {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+
+        .display-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .expression {
+            color: #bbbbbb;
+            font-size: 0.9em;
+            text-align: right;
+            margin-bottom: 5px;
+        }
+
+        .display {
+            width: 100%;
+            height: 60px;
+            background: #333;
+            color: #fff;
+            font-size: 2em;
+            text-align: right;
+            padding: 10px;
+            box-sizing: border-box;
+            border-radius: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            position: relative;
+        }
+
+        .button {
+            background: #2d2d2d;
+            border: none;
+            padding: 15px;
+            font-size: 1.5em;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #fff;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .button:active {
+            background: #444;
+        }
+
+        .button.operator {
+            background: #ff9500;
+        }
+
+        .button.operator:active {
+            background: #e08900;
+        }
+
+        .button.clear {
+            background: #ff3b30;
+        }
+
+        .button.clear:active {
+            background: #d32d26;
+        }
+
+        .button.equals {
+            background: #4cd964;
+            grid-column: span 2;
+        }
+
+        .button.equals:active {
+            background: #3cb854;
+        }
+
+        .developer-mode {
+            margin-top: 20px;
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .developer-mode label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .developer-mode input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .developer-mode textarea {
+            width: 100%;
+            height: 60px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background: #222;
+            color: #fff;
+            padding: 10px;
+            resize: none;
+        }
+
+        .developer-mode .mode-option {
+            margin-bottom: 10px;
+        }
+
+        .shy-display {
+            font-size: 0.9em;
+            text-align: center;
+            margin-top: 10px;
+            color: #ffcccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display-container">
+            <div id="expression" class="expression"></div>
+            <div id="display" class="display">0</div>
+            <div id="shyDisplay" class="shy-display" style="display: none;">Привет! Я новенький... 🙈</div>
+        </div>
+        <div class="buttons" id="buttons">
+            <button class="button clear" onclick="clearDisplay()">С</button>
+            <button class="button" onclick="appendToDisplay('%')">%</button>
+            <button class="button" onclick="deleteLast()">⌫</button>
+            <button class="button operator" onclick="appendToDisplay('/')">÷</button>
+
+            <button class="button" onclick="appendToDisplay('7')">7</button>
+            <button class="button" onclick="appendToDisplay('8')">8</button>
+            <button class="button" onclick="appendToDisplay('9')">9</button>
+            <button class="button operator" onclick="appendToDisplay('*')">×</button>
+
+            <button class="button" onclick="appendToDisplay('4')">4</button>
+            <button class="button" onclick="appendToDisplay('5')">5</button>
+            <button class="button" onclick="appendToDisplay('6')">6</button>
+            <button class="button operator" onclick="appendToDisplay('-')">−</button>
+
+            <button class="button" onclick="appendToDisplay('1')">1</button>
+            <button class="button" onclick="appendToDisplay('2')">2</button>
+            <button class="button" onclick="appendToDisplay('3')">3</button>
+            <button class="button operator" onclick="appendToDisplay('+')">+</button>
+
+            <button class="button" onclick="appendToDisplay('0')">0</button>
+            <button class="button" onclick="appendToDisplay('.')">.</button>
+            <button class="button equals" onclick="calculate()">=</button>
+        </div>
+        <div id="developer-mode" class="developer-mode">
+            <label>
+                <input type="checkbox" id="customTextToggle" onchange="toggleCustomText()">
+                Включить свой текст
+            </label>
+            <textarea id="customTextInput" placeholder="Введите свой текст..." disabled></textarea>
+            <div class="mode-option">
+                <label>
+                    <input type="checkbox" id="drunkModeToggle" onchange="toggleDrunkMode()">
+                    Режим пьяница
+                </label>
+            </div>
+            <div class="mode-option">
+                <label>
+                    <input type="checkbox" id="shyModeToggle" onchange="toggleShyMode()">
+                    Режим стесняшка
+                </label>
+            </div>
+            <div class="mode-option">
+                <label>
+                    <input type="checkbox" id="chaosModeToggle" onchange="toggleChaosMode()">
+                    Режим хаос
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        const expressionDisplay = document.getElementById('expression');
+        const developerMode = document.getElementById('developer-mode');
+        const customTextToggle = document.getElementById('customTextToggle');
+        const customTextInput = document.getElementById('customTextInput');
+        const drunkModeToggle = document.getElementById('drunkModeToggle');
+        const shyModeToggle = document.getElementById('shyModeToggle');
+        const chaosModeToggle = document.getElementById('chaosModeToggle');
+        const shyDisplay = document.getElementById('shyDisplay');
+        const buttonsContainer = document.getElementById('buttons');
+
+        let drunkMode = false;
+        let shyMode = false;
+        let chaosMode = false;
+
+        function clearDisplay() {
+            display.textContent = '0';
+            expressionDisplay.textContent = '';
+        }
+
+        function appendToDisplay(value) {
+            if (display.textContent.length >= 9) return;
+
+            if (display.textContent === '0' || customTextToggle.checked) {
+                display.textContent = value;
+            } else {
+                display.textContent += value;
+            }
+
+            if (!customTextToggle.checked) {
+                expressionDisplay.textContent += value;
+            }
+
+            checkDeveloperMode();
+
+            if (shyMode) {
+                shyDisplay.style.display = 'block';
+                console.log('Ой, я впервые вижу такие цифры 🙈');
+            }
+        }
+
+        function deleteLast() {
+            if (!customTextToggle.checked) {
+                display.textContent = display.textContent.slice(0, -1) || '0';
+                expressionDisplay.textContent = expressionDisplay.textContent.slice(0, -1);
+            }
+        }
+
+        function calculate() {
+            try {
+                let result = eval(expressionDisplay.textContent);
+                let finalResult = result === Infinity ? 'Бесконечность' : result;
+
+                if (drunkMode) {
+                    finalResult = (finalResult * (Math.random() * 2 + 0.5)).toFixed(2);
+                }
+
+                display.textContent = finalResult;
+
+                if (shyMode) {
+                    shyDisplay.textContent = 'Ой... Я вроде всё посчитал! 😊';
+                }
+            } catch (e) {
+                display.textContent = 'Ошибка';
+            }
+        }
+
+        function checkDeveloperMode() {
+            if (display.textContent === '77*349') {
+                developerMode.style.display = 'flex';
+            }
+        }
+
+        function toggleCustomText() {
+            customTextInput.disabled = !customTextToggle.checked;
+
+            if (!customTextToggle.checked) {
+                clearDisplay();
+            }
+        }
+
+        function toggleDrunkMode() {
+            drunkMode = drunkModeToggle.checked;
+        }
+
+        function toggleShyMode() {
+            shyMode = shyModeToggle.checked;
+            shyDisplay.style.display = shyMode ? 'block' : 'none';
+
+            if (shyMode) {
+                shyDisplay.textContent = 'Привет! Я новенький... 🙈';
+                console.log('Привет! Я новенький и немного стесняюсь 🙃');
+            }
+        }
+
+        function toggleChaosMode() {
+            chaosMode = chaosModeToggle.checked;
+
+            if (chaosMode) {
+                buttonsContainer.querySelectorAll('.button').forEach(button => {
+                    button.style.position = 'absolute';
+                    button.style.transition = 'transform 0.2s';
+                    button.addEventListener('mouseover', moveButton);
+                });
+            } else {
+                buttonsContainer.querySelectorAll('.button').forEach(button => {
+                    button.style.position = 'static';
+                    button.style.transform = 'none';
+                    button.removeEventListener('mouseover', moveButton);
+                });
+            }
+        }
+
+        function moveButton(event) {
+            const button = event.target;
+            const containerRect = buttonsContainer.getBoundingClientRect();
+            const maxX = containerRect.width - button.offsetWidth;
+            const maxY = containerRect.height - button.offsetHeight;
+
+            const newX = Math.random() * maxX;
+            const newY = Math.random() * maxY;
+
+            button.style.transform = `translate(${newX}px, ${newY}px)`;
+        }
+
+        customTextInput.addEventListener('input', () => {
+            if (customTextToggle.checked) {
+                display.textContent = customTextInput.value;
+            }
+        });
+    </script>
+</body>
+</html>
